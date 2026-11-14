@@ -147,7 +147,7 @@ def search_links():
 
     return jsonify([dict(link) for link in links])
 
+init_db()
 
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
