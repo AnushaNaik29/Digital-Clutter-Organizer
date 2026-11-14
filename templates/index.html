@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,8 +16,6 @@
 
 
 <body>
-
-
 
 <nav class="navbar">
 
@@ -54,7 +53,6 @@
     </div>
 
 </section>
-
 
 
 <section id="add" class="section">
@@ -192,8 +190,6 @@
     </div>
 
 
-
-
     <div class="filters">
 
         <button onclick="filterCategory('All')">
@@ -223,8 +219,6 @@
     </div>
 
 
-
-
     <div id="linksContainer">
 
     </div>
@@ -232,6 +226,107 @@
 </section>
 
 
+<!-- EDIT LINK MODAL -->
+
+<div id="editModal" class="edit-modal">
+
+    <div class="edit-box">
+
+        <h2>Edit Link</h2>
+
+        <input type="hidden" id="editId">
+
+        <div class="input-group">
+
+            <label>Link Title</label>
+
+            <input
+                type="text"
+                id="editTitle"
+                required>
+
+        </div>
+
+
+        <div class="input-group">
+
+            <label>Website URL</label>
+
+            <input
+                type="url"
+                id="editUrl"
+                required>
+
+        </div>
+
+
+        <div class="input-group">
+
+            <label>Category</label>
+
+            <select id="editCategory">
+
+                <option value="Education">
+                    Education
+                </option>
+
+                <option value="Technology">
+                    Technology
+                </option>
+
+                <option value="Entertainment">
+                    Entertainment
+                </option>
+
+                <option value="Shopping">
+                    Shopping
+                </option>
+
+                <option value="Work">
+                    Work
+                </option>
+
+                <option value="Social">
+                    Social
+                </option>
+
+                <option value="Other">
+                    Other
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="input-group">
+
+            <label>Description</label>
+
+            <textarea id="editDescription"></textarea>
+
+        </div>
+
+
+        <div class="edit-buttons">
+
+            <button
+                type="button"
+                onclick="closeEditModal()">
+                Cancel
+            </button>
+
+            <button
+                type="button"
+                onclick="updateLink()">
+                Save Changes
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
 
 <footer>
