@@ -1,16 +1,14 @@
+```javascript
 let allLinks = [];
 
 let currentCategory = "All";
-
-
 
 
 async function loadLinks() {
 
     try {
 
-        const response =
-            await fetch("/api/links");
+        const response = await fetch("/api/links");
 
         allLinks = await response.json();
 
@@ -24,8 +22,6 @@ async function loadLinks() {
             "<p>Unable to load links.</p>";
     }
 }
-
-
 
 
 function displayLinks(links) {
@@ -49,7 +45,8 @@ function displayLinks(links) {
 
     links.forEach(link => {
 
-        const card = document.createElement("div");
+        const card =
+            document.createElement("div");
 
         card.className = "link-card";
 
@@ -71,8 +68,9 @@ function displayLinks(links) {
             </p>
 
             <a
-                href="${link.url}"
-                target="_blank">
+                href="${escapeHTML(link.url)}"
+                target="_blank"
+                rel="noopener noreferrer">
                 ${escapeHTML(link.url)}
             </a>
 
@@ -81,6 +79,7 @@ function displayLinks(links) {
                 onclick="deleteLink(${link.id})">
                 Delete
             </button>
+
         `;
 
         container.appendChild(card);
@@ -88,86 +87,97 @@ function displayLinks(links) {
 }
 
 
-
 document
     .getElementById("linkForm")
-    .addEventListener("submit", async function(event) {
+    .addEventListener(
+        "submit",
+        async function (event) {
 
-        event.preventDefault();
-
-
-        const data = {
-
-            title:
-                document.getElementById("title").value,
-
-            url:
-                document.getElementById("url").value,
-
-            category:
-                document.getElementById("category").value,
-
-            description:
-                document.getElementById("description").value
-        };
+            event.preventDefault();
 
 
-        try {
+            const data = {
 
-            const response =
-                await fetch("/api/links", {
+                title:
+                    document.getElementById("title").value.trim(),
 
-                    method: "POST",
+                url:
+                    document.getElementById("url").value.trim(),
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+                category:
+                    document.getElementById("category").value,
 
-                    body: JSON.stringify(data)
-                });
-
-
-            const result =
-                await response.json();
-
-
-            const message =
-                document.getElementById("message");
+                description:
+                    document
+                        .getElementById("description")
+                        .value
+                        .trim()
+            };
 
 
-            if (result.success) {
+            try {
 
-                message.textContent =
-                    "✓ Link saved successfully.";
+                const response =
+                    await fetch("/api/links", {
 
-                message.style.color =
-                    "#bbbbbb";
+                        method: "POST",
 
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(data)
+                    });
+
+
+                const result =
+                    await response.json();
+
+
+                const message =
+                    document.getElementById("message");
+
+
+                if (result.success) {
+
+                    message.textContent =
+                        "✓ Link saved successfully.";
+
+                    message.style.color =
+                        "#bbbbbb";
+
+
+                    document
+                        .getElementById("linkForm")
+                        .reset();
+
+
+                    loadLinks();
+
+                } else {
+
+                    message.textContent =
+                        result.message ||
+                        "Unable to save link.";
+
+                    message.style.color =
+                        "red";
+                }
+
+            } catch (error) {
+
+                console.error(error);
 
                 document
-                    .getElementById("linkForm")
-                    .reset();
-
-
-                loadLinks();
-
-            } else {
-
-                message.textContent =
-                    result.message;
+                    .getElementById("message")
+                    .textContent =
+                    "Something went wrong.";
 
             }
-
-        } catch (error) {
-
-            document.getElementById("message")
-                .textContent =
-                "Something went wrong.";
         }
-    });
-
-
+    );
 
 
 async function deleteLink(id) {
@@ -175,80 +185,113 @@ async function deleteLink(id) {
     const confirmed =
         confirm("Delete this link?");
 
+
     if (!confirmed) {
+
         return;
     }
 
 
-    await fetch(`/api/links/${id}`, {
+    try {
 
-        method: "DELETE"
-    });
+        const response =
+            await fetch(`/api/links/${id}`, {
+
+                method: "DELETE"
+            });
 
 
-    loadLinks();
+        const result =
+            await response.json();
+
+
+        if (result.success) {
+
+            loadLinks();
+
+        } else {
+
+            alert(
+                result.message ||
+                "Unable to delete link."
+            );
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Something went wrong while deleting.");
+    }
 }
-
-
 
 
 document
     .getElementById("searchInput")
-    .addEventListener("input", function() {
+    .addEventListener(
+        "input",
+        function () {
 
-        const searchText =
-            this.value.toLowerCase();
-
-
-        let filtered =
-            allLinks.filter(link => {
-
-                return (
-
-                    link.title
-                        .toLowerCase()
-                        .includes(searchText)
-
-                    ||
-
-                    link.url
-                        .toLowerCase()
-                        .includes(searchText)
-
-                    ||
-
-                    link.category
-                        .toLowerCase()
-                        .includes(searchText)
-
-                    ||
-
-                    (link.description || "")
-                        .toLowerCase()
-                        .includes(searchText)
-                );
-            });
+            const searchText =
+                this.value
+                    .toLowerCase()
+                    .trim();
 
 
-        if (currentCategory !== "All") {
+            let filtered =
+                allLinks.filter(link => {
 
-            filtered =
-                filtered.filter(link =>
-                    link.category ===
-                    currentCategory
-                );
+                    return (
+
+                        (link.title || "")
+                            .toLowerCase()
+                            .includes(searchText)
+
+                        ||
+
+                        (link.url || "")
+                            .toLowerCase()
+                            .includes(searchText)
+
+                        ||
+
+                        (link.category || "")
+                            .toLowerCase()
+                            .includes(searchText)
+
+                        ||
+
+                        (link.description || "")
+                            .toLowerCase()
+                            .includes(searchText)
+
+                    );
+                });
+
+
+            if (currentCategory !== "All") {
+
+                filtered =
+                    filtered.filter(link =>
+                        link.category ===
+                        currentCategory
+                    );
+            }
+
+
+            displayLinks(filtered);
         }
-
-
-        displayLinks(filtered);
-    });
+    );
 
 
 function filterCategory(category) {
 
-    currentCategory = category;
+    currentCategory =
+        category;
 
-    let filtered = allLinks;
+
+    let filtered =
+        allLinks;
 
 
     if (category !== "All") {
@@ -264,16 +307,24 @@ function filterCategory(category) {
 }
 
 
-
 function escapeHTML(text) {
+
+    if (text === null ||
+        text === undefined) {
+
+        return "";
+    }
+
 
     const div =
         document.createElement("div");
 
-    div.textContent = text;
+    div.textContent =
+        String(text);
 
     return div.innerHTML;
 }
 
 
 loadLinks();
+```
