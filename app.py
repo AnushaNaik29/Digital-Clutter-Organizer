@@ -1,3 +1,4 @@
+```python
 from flask import Flask, render_template, request, jsonify
 import sqlite3
 from datetime import datetime
@@ -14,6 +15,7 @@ def get_db():
 
 
 def init_db():
+
     connection = get_db()
 
     connection.execute("""
@@ -24,9 +26,26 @@ def init_db():
             category TEXT NOT NULL,
             description TEXT,
             link_status TEXT DEFAULT 'Not checked',
+            pinned INTEGER DEFAULT 0,
             created_at TEXT
         )
     """)
+
+    columns = connection.execute(
+        "PRAGMA table_info(saved_links)"
+    ).fetchall()
+
+    column_names = [
+        column["name"]
+        for column in columns
+    ]
+
+    if "pinned" not in column_names:
+
+        connection.execute("""
+            ALTER TABLE saved_links
+            ADD COLUMN pinned INTEGER DEFAULT 0
+        """)
 
     connection.commit()
     connection.close()
@@ -34,8 +53,8 @@ def init_db():
 
 @app.route("/")
 def home():
-    return render_template("index.html")
 
+    return render_template("index.html")
 
 
 @app.route("/api/links", methods=["GET"])
@@ -45,13 +64,15 @@ def get_links():
 
     links = connection.execute("""
         SELECT * FROM saved_links
-        ORDER BY id DESC
+        ORDER BY pinned DESC, id DESC
     """).fetchall()
 
     connection.close()
 
-    return jsonify([dict(link) for link in links])
-
+    return jsonify([
+        dict(link)
+        for link in links
+    ])
 
 
 @app.route("/api/links", methods=["POST"])
@@ -65,6 +86,7 @@ def save_link():
     description = data.get("description", "").strip()
 
     if not title or not url or not category:
+
         return jsonify({
             "success": False,
             "message": "Title, URL and category are required."
@@ -76,14 +98,22 @@ def save_link():
 
         connection.execute("""
             INSERT INTO saved_links
-            (title, url, category, description, created_at)
+            (
+                title,
+                url,
+                category,
+                description,
+                created_at
+            )
             VALUES (?, ?, ?, ?, ?)
         """, (
             title,
             url,
             category,
             description,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
         ))
 
         connection.commit()
@@ -101,8 +131,8 @@ def save_link():
         }), 400
 
     finally:
-        connection.close()
 
+        connection.close()
 
 
 @app.route("/api/links/<int:link_id>", methods=["PUT"])
@@ -116,6 +146,7 @@ def update_link(link_id):
     description = data.get("description", "").strip()
 
     if not title or not url or not category:
+
         return jsonify({
             "success": False,
             "message": "Title, URL and category are required."
@@ -143,6 +174,7 @@ def update_link(link_id):
         connection.commit()
 
         if cursor.rowcount == 0:
+
             return jsonify({
                 "success": False,
                 "message": "Link not found."
@@ -161,8 +193,8 @@ def update_link(link_id):
         }), 400
 
     finally:
-        connection.close()
 
+        connection.close()
 
 
 @app.route("/api/links/<int:link_id>", methods=["DELETE"])
@@ -179,6 +211,7 @@ def delete_link(link_id):
     connection.close()
 
     if cursor.rowcount == 0:
+
         return jsonify({
             "success": False,
             "message": "Link not found."
@@ -190,20 +223,67 @@ def delete_link(link_id):
     })
 
 
+@app.route("/api/links/<int:link_id>/pin", methods=["PUT"])
+def toggle_pin(link_id):
+
+    connection = get_db()
+
+    link = connection.execute("""
+        SELECT pinned
+        FROM saved_links
+        WHERE id = ?
+    """, (link_id,)).fetchone()
+
+    if not link:
+
+        connection.close()
+
+        return jsonify({
+            "success": False,
+            "message": "Link not found."
+        }), 404
+
+    new_status = (
+        0 if link["pinned"] else 1
+    )
+
+    connection.execute("""
+        UPDATE saved_links
+        SET pinned = ?
+        WHERE id = ?
+    """, (
+        new_status,
+        link_id
+    ))
+
+    connection.commit()
+    connection.close()
+
+    return jsonify({
+        "success": True,
+        "pinned": new_status
+    })
+
+
 @app.route("/api/search", methods=["GET"])
 def search_links():
 
-    keyword = request.args.get("q", "").strip()
+    keyword = request.args.get(
+        "q",
+        ""
+    ).strip()
 
     connection = get_db()
 
     links = connection.execute("""
         SELECT * FROM saved_links
+
         WHERE title LIKE ?
         OR url LIKE ?
         OR category LIKE ?
         OR description LIKE ?
-        ORDER BY id DESC
+
+        ORDER BY pinned DESC, id DESC
     """, (
         f"%{keyword}%",
         f"%{keyword}%",
@@ -213,8 +293,10 @@ def search_links():
 
     connection.close()
 
-    return jsonify([dict(link) for link in links])
-
+    return jsonify([
+        dict(link)
+        for link in links
+    ])
 
 
 init_db()
@@ -222,3 +304,4 @@ init_db()
 
 if __name__ == "__main__":
     app.run(debug=True)
+```
