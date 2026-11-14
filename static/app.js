@@ -1,85 +1,127 @@
-```javascript
-let allLinks = [];
+let currentEditId = null;
 
-let currentCategory = "All";
+document.addEventListener("DOMContentLoaded", () => {
+    loadLinks();
+    loadStats();
+
+    const searchInput = document.getElementById("searchInput");
+
+    if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            searchLinks(searchInput.value);
+        });
+    }
+});
 
 
 async function loadLinks() {
-
     try {
-
-        const response = await fetch("/api/links");
-
-        allLinks = await response.json();
-
-        displayLinks(allLinks);
-
+        const response = await fetch("/links");
+        const links = await response.json();
+        displayLinks(links);
     } catch (error) {
+        console.error("Error loading links:", error);
+    }
+}
 
-        console.error(error);
 
-        document.getElementById("linksContainer").innerHTML =
-            "<p>Unable to load links.</p>";
+async function loadStats() {
+    try {
+        const response = await fetch("/stats");
+        const stats = await response.json();
+
+        const totalElement = document.getElementById("totalLinks");
+        const pinnedElement = document.getElementById("pinnedLinks");
+
+        if (totalElement) {
+            totalElement.textContent = stats.total;
+        }
+
+        if (pinnedElement) {
+            pinnedElement.textContent = stats.pinned;
+        }
+    } catch (error) {
+        console.error("Error loading statistics:", error);
     }
 }
 
 
 function displayLinks(links) {
+    const container = document.getElementById("linksContainer");
 
-    const container =
-        document.getElementById("linksContainer");
+    if (!container) {
+        return;
+    }
 
     container.innerHTML = "";
 
     if (links.length === 0) {
-
         container.innerHTML = `
-            <p class="empty">
-                No links found.
-            </p>
+            <div class="empty-state">
+                <h3>No links found</h3>
+                <p>Save your first link to get started.</p>
+            </div>
         `;
-
         return;
     }
 
-
     links.forEach(link => {
-
-        const card =
-            document.createElement("div");
+        const card = document.createElement("div");
 
         card.className = "link-card";
 
         card.innerHTML = `
+            <div class="link-header">
+                <div>
+                    <h3>${escapeHTML(link.title || "Untitled Link")}</h3>
 
-            <span class="category">
-                ${escapeHTML(link.category)}
-            </span>
+                    <a href="${escapeHTML(link.url)}"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        ${escapeHTML(link.url)}
+                    </a>
+                </div>
 
-            <h3>
-                ${escapeHTML(link.title)}
-            </h3>
+                <button
+                    class="pin-button"
+                    onclick="togglePin(${link.id})">
+                    ${link.pinned ? "📌" : "📍"}
+                </button>
+            </div>
 
-            <p>
-                ${escapeHTML(
-                    link.description ||
-                    "No description available."
-                )}
-            </p>
+            <div class="link-details">
 
-            <a
-                href="${escapeHTML(link.url)}"
-                target="_blank"
-                rel="noopener noreferrer">
-                ${escapeHTML(link.url)}
-            </a>
+                <span class="category">
+                    ${escapeHTML(link.category || "Other")}
+                </span>
 
-            <button
-                class="delete-button"
-                onclick="deleteLink(${link.id})">
-                Delete
-            </button>
+                ${
+                    link.notes
+                    ? `<p>${escapeHTML(link.notes)}</p>`
+                    : ""
+                }
 
+            </div>
+
+            <div class="link-actions">
+
+                <button onclick="editLink(${link.id})">
+                    Edit
+                </button>
+
+                <button onclick="checkLink(${link.id})">
+                    Check Link
+                </button>
+
+                <button onclick="deleteLink(${link.id})">
+                    Delete
+                </button>
+
+            </div>
+
+            <div class="link-status"
+                 id="status-${link.id}">
+            </div>
         `;
 
         container.appendChild(card);
@@ -87,244 +129,342 @@ function displayLinks(links) {
 }
 
 
-document
-    .getElementById("linkForm")
-    .addEventListener(
-        "submit",
-        async function (event) {
+async function addLink() {
+    const urlInput = document.getElementById("urlInput");
+    const titleInput = document.getElementById("titleInput");
+    const categoryInput = document.getElementById("categoryInput");
+    const notesInput = document.getElementById("notesInput");
 
-            event.preventDefault();
-
-
-            const data = {
-
-                title:
-                    document.getElementById("title").value.trim(),
-
-                url:
-                    document.getElementById("url").value.trim(),
-
-                category:
-                    document.getElementById("category").value,
-
-                description:
-                    document
-                        .getElementById("description")
-                        .value
-                        .trim()
-            };
-
-
-            try {
-
-                const response =
-                    await fetch("/api/links", {
-
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify(data)
-                    });
-
-
-                const result =
-                    await response.json();
-
-
-                const message =
-                    document.getElementById("message");
-
-
-                if (result.success) {
-
-                    message.textContent =
-                        "✓ Link saved successfully.";
-
-                    message.style.color =
-                        "#bbbbbb";
-
-
-                    document
-                        .getElementById("linkForm")
-                        .reset();
-
-
-                    loadLinks();
-
-                } else {
-
-                    message.textContent =
-                        result.message ||
-                        "Unable to save link.";
-
-                    message.style.color =
-                        "red";
-                }
-
-            } catch (error) {
-
-                console.error(error);
-
-                document
-                    .getElementById("message")
-                    .textContent =
-                    "Something went wrong.";
-
-            }
-        }
-    );
-
-
-async function deleteLink(id) {
-
-    const confirmed =
-        confirm("Delete this link?");
-
-
-    if (!confirmed) {
-
+    if (!urlInput) {
         return;
     }
 
+    const url = urlInput.value.trim();
+    const title = titleInput ? titleInput.value.trim() : "";
+    const category = categoryInput ? categoryInput.value : "Other";
+    const notes = notesInput ? notesInput.value.trim() : "";
+
+    if (!url) {
+        alert("Please enter a URL.");
+        return;
+    }
 
     try {
+        const response = await fetch("/add", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                url: url,
+                title: title,
+                category: category,
+                notes: notes
+            })
+        });
 
-        const response =
-            await fetch(`/api/links/${id}`, {
+        const result = await response.json();
 
-                method: "DELETE"
-            });
+        if (!response.ok) {
+            alert(result.error);
+            return;
+        }
+
+        clearForm();
+        loadLinks();
+        loadStats();
+
+        alert("Link saved successfully.");
+
+    } catch (error) {
+        alert("Could not save the link.");
+    }
+}
 
 
-        const result =
-            await response.json();
+async function editLink(id) {
+    try {
+        const response = await fetch("/links");
+        const links = await response.json();
+
+        const link = links.find(item => item.id === id);
+
+        if (!link) {
+            alert("Link not found.");
+            return;
+        }
+
+        const urlInput = document.getElementById("urlInput");
+        const titleInput = document.getElementById("titleInput");
+        const categoryInput = document.getElementById("categoryInput");
+        const notesInput = document.getElementById("notesInput");
+        const submitButton = document.getElementById("saveButton");
+
+        if (urlInput) {
+            urlInput.value = link.url;
+        }
+
+        if (titleInput) {
+            titleInput.value = link.title;
+        }
+
+        if (categoryInput) {
+            categoryInput.value = link.category;
+        }
+
+        if (notesInput) {
+            notesInput.value = link.notes;
+        }
+
+        currentEditId = id;
+
+        if (submitButton) {
+            submitButton.textContent = "Update Link";
+            submitButton.onclick = updateLink;
+        }
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    } catch (error) {
+        alert("Could not load the link.");
+    }
+}
 
 
-        if (result.success) {
+async function updateLink() {
+    const urlInput = document.getElementById("urlInput");
+    const titleInput = document.getElementById("titleInput");
+    const categoryInput = document.getElementById("categoryInput");
+    const notesInput = document.getElementById("notesInput");
 
-            loadLinks();
+    if (!currentEditId) {
+        return;
+    }
 
-        } else {
+    const url = urlInput.value.trim();
+    const title = titleInput ? titleInput.value.trim() : "";
+    const category = categoryInput ? categoryInput.value : "Other";
+    const notes = notesInput ? notesInput.value.trim() : "";
 
-            alert(
-                result.message ||
-                "Unable to delete link."
-            );
+    if (!url) {
+        alert("Please enter a URL.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/edit/${currentEditId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                url: url,
+                title: title,
+                category: category,
+                notes: notes
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(result.error);
+            return;
+        }
+
+        alert("Link updated successfully.");
+
+        currentEditId = null;
+
+        clearForm();
+
+        const submitButton = document.getElementById("saveButton");
+
+        if (submitButton) {
+            submitButton.textContent = "Save Link";
+            submitButton.onclick = addLink;
+        }
+
+        loadLinks();
+        loadStats();
+
+    } catch (error) {
+        alert("Could not update the link.");
+    }
+}
+
+
+async function deleteLink(id) {
+    const confirmed = confirm(
+        "Are you sure you want to delete this link?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/delete/${id}`, {
+            method: "DELETE"
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(result.error);
+            return;
+        }
+
+        loadLinks();
+        loadStats();
+
+    } catch (error) {
+        alert("Could not delete the link.");
+    }
+}
+
+
+async function togglePin(id) {
+    try {
+        const response = await fetch(`/pin/${id}`, {
+            method: "PUT"
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(result.error);
+            return;
+        }
+
+        loadLinks();
+        loadStats();
+
+    } catch (error) {
+        alert("Could not change pin status.");
+    }
+}
+
+
+async function searchLinks(query) {
+    try {
+        const response = await fetch(
+            `/search?q=${encodeURIComponent(query)}`
+        );
+
+        const links = await response.json();
+
+        displayLinks(links);
+
+    } catch (error) {
+        console.error("Search error:", error);
+    }
+}
+
+
+async function filterCategory(category) {
+    try {
+        const response = await fetch(
+            `/category/${encodeURIComponent(category)}`
+        );
+
+        const links = await response.json();
+
+        displayLinks(links);
+
+    } catch (error) {
+        console.error("Category filter error:", error);
+    }
+}
+
+
+async function checkLink(id) {
+    const statusElement = document.getElementById(`status-${id}`);
+
+    if (statusElement) {
+        statusElement.textContent = "Checking link...";
+    }
+
+    try {
+        const response = await fetch(`/check-link/${id}`);
+
+        const result = await response.json();
+
+        if (statusElement) {
+            if (result.status === "working") {
+                statusElement.textContent =
+                    `Working ✓ (${result.code})`;
+            } else {
+                statusElement.textContent =
+                    `Broken ✕ (${result.code || "No response"})`;
+            }
         }
 
     } catch (error) {
-
-        console.error(error);
-
-        alert("Something went wrong while deleting.");
-    }
-}
-
-
-document
-    .getElementById("searchInput")
-    .addEventListener(
-        "input",
-        function () {
-
-            const searchText =
-                this.value
-                    .toLowerCase()
-                    .trim();
-
-
-            let filtered =
-                allLinks.filter(link => {
-
-                    return (
-
-                        (link.title || "")
-                            .toLowerCase()
-                            .includes(searchText)
-
-                        ||
-
-                        (link.url || "")
-                            .toLowerCase()
-                            .includes(searchText)
-
-                        ||
-
-                        (link.category || "")
-                            .toLowerCase()
-                            .includes(searchText)
-
-                        ||
-
-                        (link.description || "")
-                            .toLowerCase()
-                            .includes(searchText)
-
-                    );
-                });
-
-
-            if (currentCategory !== "All") {
-
-                filtered =
-                    filtered.filter(link =>
-                        link.category ===
-                        currentCategory
-                    );
-            }
-
-
-            displayLinks(filtered);
+        if (statusElement) {
+            statusElement.textContent =
+                "Could not check this link.";
         }
-    );
-
-
-function filterCategory(category) {
-
-    currentCategory =
-        category;
-
-
-    let filtered =
-        allLinks;
-
-
-    if (category !== "All") {
-
-        filtered =
-            allLinks.filter(link =>
-                link.category === category
-            );
     }
-
-
-    displayLinks(filtered);
 }
 
 
-function escapeHTML(text) {
+async function checkAllLinks() {
+    try {
+        const response = await fetch("/check-all-links");
 
-    if (text === null ||
-        text === undefined) {
+        const results = await response.json();
 
-        return "";
+        results.forEach(result => {
+            const statusElement =
+                document.getElementById(`status-${result.id}`);
+
+            if (statusElement) {
+                if (result.status === "working") {
+                    statusElement.textContent =
+                        `Working ✓ (${result.code})`;
+                } else {
+                    statusElement.textContent =
+                        `Broken ✕ (${result.code || "No response"})`;
+                }
+            }
+        });
+
+    } catch (error) {
+        alert("Could not check the links.");
+    }
+}
+
+
+function clearForm() {
+    const urlInput = document.getElementById("urlInput");
+    const titleInput = document.getElementById("titleInput");
+    const categoryInput = document.getElementById("categoryInput");
+    const notesInput = document.getElementById("notesInput");
+
+    if (urlInput) {
+        urlInput.value = "";
     }
 
+    if (titleInput) {
+        titleInput.value = "";
+    }
 
-    const div =
-        document.createElement("div");
+    if (categoryInput) {
+        categoryInput.value = "Other";
+    }
 
-    div.textContent =
-        String(text);
+    if (notesInput) {
+        notesInput.value = "";
+    }
+}
 
+
+function escapeHTML(value) {
+    const div = document.createElement("div");
+    div.textContent = value;
     return div.innerHTML;
 }
-
-
-loadLinks();
-```
