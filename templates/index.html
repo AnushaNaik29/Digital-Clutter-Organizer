@@ -1,10 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Digital Clutter Organizer</title>
@@ -22,41 +20,31 @@
     </div>
 
     <div class="nav-links">
-
-        <a href="#home">
-            Home
-        </a>
-
-        <a href="#add-link">
-            Add Link
-        </a>
-
-        <a href="#my-links">
-            My Links
-        </a>
-
+        <a href="#dashboard">Dashboard</a>
+        <a href="#addLink">Add Link</a>
+        <a href="#savedLinks">Saved Links</a>
     </div>
 
 </nav>
 
 
-<section class="hero" id="home">
+<main>
+
+
+<section class="hero">
 
     <div class="hero-content">
 
         <h1>
-            Organize Your
-            <span>Digital World</span>
+            Organize Your Digital World
         </h1>
 
         <p>
-            Save, organize and manage your important digital resources
-            in one simple place.
+            Save, organize, search and manage your important links in one place.
         </p>
 
-        <a href="#add-link"
-           class="main-button">
-            Add a Link
+        <a href="#addLink" class="primary-button">
+            Add New Link
         </a>
 
     </div>
@@ -64,16 +52,64 @@
 </section>
 
 
-<section class="section" id="add-link">
 
-    <div class="section-title">
+<section id="dashboard" class="dashboard">
+
+    <div class="stat-card">
+
+        <div class="stat-icon">
+            🔗
+        </div>
+
+        <div>
+            <h3>Total Links</h3>
+            <p id="totalLinks">0</p>
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-icon">
+            📌
+        </div>
+
+        <div>
+            <h3>Pinned Links</h3>
+            <p id="pinnedLinks">0</p>
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-icon">
+            🔍
+        </div>
+
+        <div>
+            <h3>Quick Search</h3>
+            <p>Find links easily</p>
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<section id="addLink" class="add-section">
+
+    <div class="section-heading">
 
         <h2>
             Save a New Link
         </h2>
 
         <p>
-            Keep your useful websites organized and easy to find.
+            Store websites, resources and useful pages for later.
         </p>
 
     </div>
@@ -81,147 +117,181 @@
 
     <div class="form-card">
 
-        <form id="linkForm">
+        <div class="form-group">
 
-            <div class="input-group">
+            <label for="urlInput">
+                URL
+            </label>
 
-                <label for="title">
-                    Link Title
-                </label>
+            <input
+                type="text"
+                id="urlInput"
+                placeholder="https://example.com">
 
-                <input
-                    type="text"
-                    id="title"
-                    placeholder="Enter link title"
-                    required>
-
-            </div>
+        </div>
 
 
-            <div class="input-group">
+        <div class="form-group">
 
-                <label for="url">
-                    Website URL
-                </label>
+            <label for="titleInput">
+                Title
+            </label>
 
-                <input
-                    type="url"
-                    id="url"
-                    placeholder="https://example.com"
-                    required>
+            <input
+                type="text"
+                id="titleInput"
+                placeholder="Enter link title">
 
-            </div>
-
-
-            <div class="input-group">
-
-                <label for="category">
-                    Category
-                </label>
-
-                <select id="category">
-
-                    <option value="Education">
-                        Education
-                    </option>
-
-                    <option value="Technology">
-                        Technology
-                    </option>
-
-                    <option value="Entertainment">
-                        Entertainment
-                    </option>
-
-                    <option value="Work">
-                        Work
-                    </option>
-
-                    <option value="Other">
-                        Other
-                    </option>
-
-                </select>
-
-            </div>
+        </div>
 
 
-            <div class="input-group">
+        <div class="form-group">
 
-                <label for="description">
-                    Description
-                </label>
+            <label for="categoryInput">
+                Category
+            </label>
 
-                <textarea
-                    id="description"
-                    placeholder="Write a short description"></textarea>
+            <select id="categoryInput">
 
-            </div>
+                <option value="Other">
+                    Other
+                </option>
+
+                <option value="Study">
+                    Study
+                </option>
+
+                <option value="Work">
+                    Work
+                </option>
+
+                <option value="Project">
+                    Project
+                </option>
+
+                <option value="Research">
+                    Research
+                </option>
+
+                <option value="Tools">
+                    Tools
+                </option>
+
+                <option value="Entertainment">
+                    Entertainment
+                </option>
+
+                <option value="Shopping">
+                    Shopping
+                </option>
+
+            </select>
+
+        </div>
 
 
-            <button
-                type="submit"
-                class="save-button">
+        <div class="form-group">
 
-                Save Link
+            <label for="notesInput">
+                Notes
+            </label>
 
-            </button>
+            <textarea
+                id="notesInput"
+                rows="4"
+                placeholder="Add a short note about this link..."></textarea>
+
+        </div>
 
 
-            <p id="message"></p>
+        <button
+            id="saveButton"
+            class="primary-button"
+            onclick="addLink()">
 
-        </form>
+            Save Link
+
+        </button>
 
     </div>
 
 </section>
 
 
-<section class="section" id="my-links">
 
-    <div class="section-title">
+<section id="savedLinks" class="links-section">
+
+    <div class="section-heading">
 
         <h2>
             My Saved Links
         </h2>
 
         <p>
-            Search and manage your digital resources.
+            Manage all your saved digital resources.
         </p>
 
     </div>
 
 
-    <div class="search-box">
+
+    <div class="search-area">
 
         <input
             type="text"
             id="searchInput"
-            placeholder="🔍 Search links...">
+            placeholder="Search by title, URL, category or notes...">
+
+        <button
+            onclick="loadLinks()">
+
+            Show All
+
+        </button>
+
+        <button
+            onclick="checkAllLinks()">
+
+            Check All Links
+
+        </button>
 
     </div>
 
 
-    <div class="filters">
 
-        <button onclick="filterCategory('All')">
+    <div class="category-filter">
+
+        <button onclick="loadLinks()">
             All
         </button>
 
-        <button onclick="filterCategory('Education')">
-            Education
+        <button onclick="filterCategory('Study')">
+            Study
         </button>
 
-        <button onclick="filterCategory('Technology')">
-            Technology
+        <button onclick="filterCategory('Work')">
+            Work
+        </button>
+
+        <button onclick="filterCategory('Project')">
+            Project
+        </button>
+
+        <button onclick="filterCategory('Research')">
+            Research
+        </button>
+
+        <button onclick="filterCategory('Tools')">
+            Tools
         </button>
 
         <button onclick="filterCategory('Entertainment')">
             Entertainment
         </button>
 
-        <button onclick="filterCategory('Work')">
-            Work
+        <button onclick="filterCategory('Shopping')">
+            Shopping
         </button>
 
         <button onclick="filterCategory('Other')">
@@ -231,22 +301,129 @@
     </div>
 
 
-    <div id="linksContainer"></div>
+
+    <div id="linksContainer" class="links-container">
+
+    </div>
 
 </section>
 
 
+
+<section class="features-section">
+
+    <div class="section-heading">
+
+        <h2>
+            What You Can Do
+        </h2>
+
+        <p>
+            Keep your digital resources organized and easy to find.
+        </p>
+
+    </div>
+
+
+    <div class="features-grid">
+
+        <div class="feature-card">
+
+            <h3>
+                Save Links
+            </h3>
+
+            <p>
+                Store important websites and resources in one place.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <h3>
+                Edit & Delete
+            </h3>
+
+            <p>
+                Update your saved information or remove links you no longer need.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <h3>
+                Pin Important Links
+            </h3>
+
+            <p>
+                Keep your most important links at the top for quick access.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <h3>
+                Search Easily
+            </h3>
+
+            <p>
+                Find saved links using titles, URLs, categories or notes.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <h3>
+                Check Broken Links
+            </h3>
+
+            <p>
+                Check whether your saved websites are still working.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <h3>
+                Organize by Category
+            </h3>
+
+            <p>
+                Separate your links into useful groups such as Study, Work and Projects.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+</main>
+
+
+
 <footer>
 
-    <h3>
+    <p>
         Digital Clutter Organizer
-    </h3>
+    </p>
 
     <p>
-        Organize smarter. Find faster.
+        Organize. Search. Remember.
     </p>
 
 </footer>
+
 
 
 <script src="{{ url_for('static', filename='app.js') }}"></script>
@@ -254,4 +431,3 @@
 </body>
 
 </html>
-
